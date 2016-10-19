@@ -1,0 +1,13 @@
+using {{rootNamespace}}.Core.Domain.{{entityNamespace}};
+using {{rootNamespace}}.Core.Repository.{{entityNamespace}};
+using {{rootNamespace}}.Data.Infrastructure;
+
+namespace {{rootNamespace}}.Data.Repository.{{entityNamespace}}
+{
+    public class {{entity}}Repository : Repository<{{entityClass}}>, I{{entity}}Repository
+    {
+        public {{entity}}Repository(IDatabaseFactory databaseFactory) : base(databaseFactory)
+        { 
+        }
+    }
+}
