@@ -1,0 +1,103 @@
+using {{rootNamespace}}.Core.Domain.{{entityNamespace}};
+using {{rootNamespace}}.Core.Infrastructure;
+using {{rootNamespace}}.Core.Repository.{{entityNamespace}};
+using System.Collections.Generic;
+using System.Data;
+using System.Net;
+using System.Web.Http;
+
+namespace {{rootNamespace}}.Api.Controllers.{{entityNamespace}}
+{
+    public class {{entityNamePluralized}}Controller : ApiController
+    {
+        private readonly I{{entityName}}Repository _{{entityNameLower}}Repository;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public {{entityNamePluralized}}Controller(I{{entityName}}Repository {{entityNameLower}}Repository, IUnitOfWork unitOfWork)
+        {
+            _{{entityNameLower}}Repository = {{entityNameLower}}Repository;
+            _unitOfWork = unitOfWork;
+        }
+
+        // GET: api/{{entityNameLowerPluralized}}
+        public IEnumerable<{{entityClass}}> Get{{entityNamePluralized}}()
+        {
+            return _{{entityNameLower}}Repository.GetAll();
+        }
+
+        // GET: api/{{entityNameLowerPluralized}}/5
+        public IHttpActionResult Get{{entityName}}(int id)
+        {
+            var {{entityNameLower}} = _{{entityNameLower}}Repository.GetById(id);
+
+            if({{entityNameLower}} == null)
+            {
+                return NotFound();
+            }
+
+            return Ok({{entityNameLower}});
+        }
+
+        // POST: api/{{entityNameLowerPluralized}}
+        public IHttpActionResult Post{{entityName}}({{entityClass}} {{entityNameLower}})
+        {
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _{{entityNameLower}}Repository.Add({{entityNameLower}});
+            _unitOfWork.Commit();
+
+            return CreatedAtRoute("DefaultApi", new { id = {{entityNameLower}}.Id }, {{entityNameLower}});
+        }
+
+        // PUT: api/{{entityNameLowerPluralized}}/5
+        public IHttpActionResult Put{{entityName}}(int id, {{entityClass}} {{entityNameLower}})
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != {{entityNameLower}}.Id)
+            {
+                return BadRequest();
+            }
+
+            _{{entityNameLower}}Repository.Update({{entityNameLower}});
+
+            try
+            {
+                _unitOfWork.Commit();
+            }
+            catch (DBConcurrencyException)
+            {
+                if (!_{{entityNameLower}}Repository.Any(x => x.Id == id))
+                {
+                    return NotFound();
+                }
+                throw;
+            }
+
+            return StatusCode(HttpStatusCode.NoContent);
+        }
+
+        // DELETE: api/{{entityNameLowerPluralized}}/5
+        public IHttpActionResult Delete{{entityName}}(int id)
+        {
+            var {{entityNameLower}} = _{{entityNameLower}}Repository.GetById(id);
+
+            if({{entityNameLower}} == null)
+            {
+                return NotFound();
+            }
+
+            _{{entityNameLower}}Repository.Delete({{entityNameLower}});
+
+            _unitOfWork.Commit();
+
+            return Ok();
+        }
+    }
+}

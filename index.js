@@ -1,57 +1,103 @@
 "use strict";
 
-const fs = require('fs');
-const mustache = require('mustache');
-const mkdirp = require('mkdirp');
-const config = require('./config');
+var fs = require('fs');
+var mustache = require('mustache');
+var mkdirp = require('mkdirp');
+var config = require('./config');
+var _ = require('lodash');
+var pluralize = require('pluralize');
 
 worker();
 
 function worker() {
+    buildDomainClasses();
     buildRepositoryInterfaces();
     buildRepositoryImplementations();
+    buildControllers();
+}
+
+function buildDomainClasses() {
+    config.entities.forEach(function(entity) {
+        buildFile({
+            template: './templates/Domain.mustache',
+            entity: entity,
+            filePath: '{{solution}}\\{{rootNamespace}}.Core\\Domain\\{{entityFolder}}',
+            fileName: '{{entityName}}.cs'
+        });
+    });
 }
 
 function buildRepositoryInterfaces() {
-    buildRepositories('./templates/IEntityRepository.mustache', 'Core', true);
+    config.entities.forEach(function(entity) {
+        buildFile({
+            template: './templates/IEntityRepository.mustache',
+            entity: entity,
+            filePath: '{{solution}}\\{{rootNamespace}}.Core\\Repository\\{{entityFolder}}',
+            fileName: 'I{{entityName}}Repository.cs'
+        });
+    });
 }
 
 function buildRepositoryImplementations() {
-    buildRepositories('./templates/EntityRepository.mustache', 'Data', false);
+    config.entities.forEach(function(entity) {
+        buildFile({
+            template: './templates/EntityRepository.mustache',
+            entity: entity,
+            filePath: '{{solution}}\\{{rootNamespace}}.Data\\Repository\\{{entityFolder}}',
+            fileName: '{{entityName}}Repository.cs'
+        });
+    });
 }
 
-function buildRepositories(templateFile, project, isInterface) {
-	config.entities.forEach(function(repository) {
-        let split = repository.split('/');
-        let entity = split[split.length - 1];
-        let namespaceSplit = split.slice(0, split.length - 1);
-
-        let view = {
-            rootNamespace: config.rootNamespace,
-            entityNamespace: namespaceSplit.join('.'),
+function buildControllers() {
+    config.entities.forEach(function(entity) {
+        buildFile({
+            template: './templates/Controller.mustache',
             entity: entity,
-            entityClass: entity
-        };
+            filePath: '{{solution}}\\{{rootNamespace}}.Api\\Controllers\\{{entityFolder}}',
+            fileName: '{{entityNamePluralized}}Controller.cs'
+        });
+    });
+}
 
-        if(split.length > 1 && view.entity === split[split.length - 2]) {
-        	view.entityClass = `Core.Domain.${view.entityNamespace}.${view.entity}`;
+function buildFile({ template='', entity={}, filePath='', fileName='' } = {}) {
+    let entitySplit = _.split(entity, '.');
+    let entityName = _.last(entitySplit);
+    let namespaceSplit = _.take(entitySplit, entitySplit.length - 1);
+
+    let view = {
+        solution: config.solution,
+        rootNamespace: config.rootNamespace,
+        entityFolder: _.join(namespaceSplit, '\\'),
+        entityNamespace: _.join(namespaceSplit, '.'),
+        entityName: entityName,
+        entityNameLower: _.camelCase(entityName),
+        entityNamePluralized: pluralize(entityName, 2),
+        entityNameLowerPluralized: pluralize(_.camelCase(entityName), 2),
+        entityClass: entityName
+    };
+
+    if (entitySplit.length > 1 && view.entityName === entitySplit.slice(-2)[0]) {
+        view.entityClass = `Core.Domain.${view.entityNamespace}.${view.entityName}`;
+    }
+
+    fs.readFile(template, { encoding: 'utf-8' }, function(err, template) {
+        if (err) {
+            return console.log(err);
         }
 
-        fs.readFile(templateFile, { encoding: 'utf-8' }, function(err, template) {
-            if (err) {
-                return console.log(err);
-            }
+        let output = mustache.render(template, view);
 
-            let output = mustache.render(template, view);
-            let filePath = `${config.solution}\\${config.rootNamespace}.${project}\\Repository\\${namespaceSplit.join('\\')}`;
-            let fileName = `${filePath}\\${isInterface ? 'I' : ''}${view.entity}Repository.cs`;
+        filePath = mustache.render(filePath, view);
+        fileName = mustache.render(fileName, view);
 
+        if (!fs.existsSync(`${filePath}\\${fileName}`)) {
             mkdirp(filePath, function(err) {
                 if (err) {
                     return console.log(err);
                 }
 
-                fs.writeFile(fileName, output, function(err) {
+                fs.writeFile(`${filePath}\\${fileName}`, output, function(err) {
                     if (err) {
                         return console.log(err);
                     }
@@ -59,6 +105,8 @@ function buildRepositories(templateFile, project, isInterface) {
                     console.log('Wrote ' + fileName);
                 });
             });
-        });
+        } else {
+            console.log('Skipping ' + filePath)
+        }
     });
 }

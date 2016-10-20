@@ -4,9 +4,9 @@ using {{rootNamespace}}.Data.Infrastructure;
 
 namespace {{rootNamespace}}.Data.Repository.{{entityNamespace}}
 {
-    public class {{entity}}Repository : Repository<{{entityClass}}>, I{{entity}}Repository
+    public class {{entityName}}Repository : Repository<{{entityClass}}>, I{{entityName}}Repository
     {
-        public {{entity}}Repository(IDatabaseFactory databaseFactory) : base(databaseFactory)
+        public {{entityName}}Repository(IDatabaseFactory databaseFactory) : base(databaseFactory)
         { 
         }
     }

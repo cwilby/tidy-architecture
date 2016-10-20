@@ -1,5 +1,5 @@
 {
-  "name": "clean-architecture-builder",
+  "name": "tidy-architecture",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -9,7 +9,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "lodash": "^4.16.4",
     "mkdirp": "^0.5.1",
-    "mustache": "^2.2.1"
+    "mustache": "^2.2.1",
+    "pluralize": "^3.0.0"
   }
 }
